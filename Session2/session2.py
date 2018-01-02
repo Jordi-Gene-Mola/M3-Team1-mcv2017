@@ -8,7 +8,7 @@ import Tkinter
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn import cluster
-from src.feature_extractors2 import SIFT_features,  DenseSIFT_features, descriptors_List2Array
+from src.feature_extractors import SIFT_features,  DenseSIFT_features, descriptors_List2Array
 from src.image_representation import BoW_hardAssignment, test_BoW_representation
 from src.train import train_svm
 from src.evaluation import plot_confusion_matrix
