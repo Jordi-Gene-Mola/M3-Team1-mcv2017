@@ -1,0 +1,16 @@
+Loaded 1881 training images filenames with classes  set(['mountain', 'inside_city', 'Opencountry', 'coast', 'street', 'forest', 'tallbuilding', 'highway'])
+Loaded 807 testing images filenames with classes  set(['mountain', 'inside_city', 'Opencountry', 'coast', 'street', 'forest', 'tallbuilding', 'highway'])
+Loading DenseSift features...
+Done in 1.3597650528 secs. (1140secs. si s'ha de calcular)
+Computing kmeans with 512 centroids
+Done in 86.9901981354 secs.
+Getting Train BoVW representation
+Done in 16.0763750076 secs.
+Training the SVM classifier...
+Done in 2.66450595856 secs.
+Getting Test BoVW representation
+Done in 541.12197113 secs.
+Testing the SVM classifier...
+Done in 0.972950935364 secs.
+Final accuracy: 84.0148698885
+Everything done in 651.049485922 secs. (1790secs. si s'ha de calcular DenseSift features)
