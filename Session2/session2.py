@@ -11,12 +11,12 @@ from sklearn import cluster
 from src.feature_extractors import SIFT_features,  DenseSIFT_features, descriptors_List2Array
 from src.image_representation import BoW_hardAssignment, test_BoW_representation
 from src.train import train_svm
-from src.evaluation import plot_confusion_matrix
+from src.evaluation import plot_confusion_matrix, rcurve
 
 start = time.time()
 
 #Variables:
-extractor = 'DenseSIFT' # SIFT or DenseSIFT
+extractor = 'SIFT' # SIFT or DenseSIFT
 classifier = 'svm' # knn, rf, gnb, svm or lr
 kernel_svm='rbf' #Kernel used in svm
 n_features=300 #num. of key points detected with SIFT
@@ -70,10 +70,13 @@ end=time.time()
 print 'Done in '+str(end-init)+' secs.'
 print 'Final accuracy: ' + str(accuracy)
 
-Y_pred=clf.predict(stdSlr.transform(visual_words_test))
+testDescriptors=stdSlr.transform(visual_words_test)
+Y_pred=clf.predict(testDescriptors)
 cm = plot_confusion_matrix(list(Y_pred), test_labels, experiment_name)
+ROCcurve=rcurve(testDescriptors, test_labels,clf)
 
 end=time.time()
 print 'Everything done in '+str(end-start)+' secs.'
 ### 69.02% (SIFT)
 ### 84.51% (DenseSIFT)
+
