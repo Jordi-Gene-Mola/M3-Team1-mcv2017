@@ -2,121 +2,74 @@ import cv2
 import numpy as np
 import h5py
 import os
+import time
 
-def SIFT_features(SIFTdetector, train_images_filenames, train_labels):
-
-    if not os.path.exists('./src/descriptors/sift.h5'):
-        # read the just 30 train images per class
-        # extract SIFT keypoints and descriptors
-        # store descriptors in a python list of numpy arrays
+def SIFT_features(SIFTdetector, train_images_filenames):
+    if not os.path.exists('./src/descriptors/sift.npy'):
+        print 'Computing SIFT features...'
+        init=time.time()
         Train_descriptors = []
-        Train_label_per_descriptor = []
 
         for i in range(len(train_images_filenames)):
             filename = train_images_filenames[i]
-            if Train_label_per_descriptor.count(train_labels[i]) < 30:
-                print 'Reading image ' + filename
-                ima = cv2.imread(filename)
-                gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
-                kpt, des = SIFTdetector[0].detectAndCompute(gray, None)
-                Train_descriptors.append(des)
-                Train_label_per_descriptor.append(train_labels[i])
-                print str(len(kpt)) + ' extracted keypoints and descriptors'
+            #print 'Reading image ' + filename
+            ima = cv2.imread(filename)
+            gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
+            kpt, des = SIFTdetector.detectAndCompute(gray, None)
+            Train_descriptors.append(des)
 
-        # Transform everything to numpy arrays
-        D = Train_descriptors[0]
-        L = np.array([Train_label_per_descriptor[0]] * Train_descriptors[0].shape[0])
+        Train_descriptors_array = np.asarray(Train_descriptors)
 
-        for i in range(1, len(Train_descriptors)):
-            D = np.vstack((D, Train_descriptors[i]))
-            L = np.hstack((L, np.array([Train_label_per_descriptor[i]] * Train_descriptors[i].shape[0])))
-        f = h5py.File('./src/descriptors/sift.h5', 'w')
-        f.create_dataset('D', data=D)
-        f.create_dataset('L', data=L)
-        f.close()
+        np.save('./src/descriptors/sift',Train_descriptors_array)
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
     else:
-        sift_descriptor = h5py.File('./src/descriptors/sift.h5', 'r')
-        D = np.array(sift_descriptor['D'])
-        L = np.array(sift_descriptor['L'])
-        sift_descriptor.close()
-    return D, L
+        print 'Loading SIFT features...'
+        init=time.time()
+        Train_descriptors_array = np.load('./src/descriptors/sift.npy')
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
+    return Train_descriptors_array
 
+def DenseSIFT_features(SIFTdetector, train_images_filenames):
 
-def n_SIFT_features(SIFTdetectors, train_images_filenames, train_labels):
-    if not os.path.exists('./src/descriptors/n_sift.h5'):
-        # read the just 30 train images per class
-        # extract SIFT keypoints and descriptors
-        # store descriptors in a python list of numpy arrays
+    if not os.path.exists('./src/descriptors/DenseSift.npy'):
+        print 'Computing DenseSIFT features...'
+        init=time.time()
         Train_descriptors = []
-        Train_label_per_descriptor = []
 
         for i in range(len(train_images_filenames)):
             filename = train_images_filenames[i]
-            if Train_label_per_descriptor.count(train_labels[i]) < 30:
-                print 'Reading image ' + filename
-                ima = cv2.imread(filename)
-                gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
-                for SIFTdetector in SIFTdetectors:
-                    kpt, des = SIFTdetector.detectAndCompute(gray, None)
-                    Train_descriptors.append(des)
-                    Train_label_per_descriptor.append(train_labels[i])
-                print str(len(kpt)) + ' extracted keypoints and descriptors'
+            #print 'Reading image ' + filename
+            ima = cv2.imread(filename)
+            gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
+            kp1=list()
+            for x in range(0, gray.shape[0],10):
+                for y in range(0, gray.shape[1],10):
+                    kp1.append(cv2.KeyPoint(x, y, np.random.randint(10,30)))
+            kp1=np.array(kp1)
+            kpt, des = SIFTdetector.compute(gray, kp1)
+            Train_descriptors.append(des)
 
-        # Transform everything to numpy arrays
+        Train_descriptors_array = np.asarray(Train_descriptors)
 
-        D = Train_descriptors[0]
-        L = np.array([Train_label_per_descriptor[0]] * Train_descriptors[0].shape[0])
-
-        for i in range(1, len(Train_descriptors)):
-            D = np.vstack((D, Train_descriptors[i]))
-            L = np.hstack((L, np.array([Train_label_per_descriptor[i]] * Train_descriptors[i].shape[0])))
-        f = h5py.File('./src/descriptors/n_sift.h5', 'w')
-        f.create_dataset('D', data=D)
-        f.create_dataset('L', data=L)
-        f.close()
+        np.save('./src/descriptors/DenseSift',Train_descriptors_array)
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
     else:
-        n_sift_descriptor = h5py.File('./src/descriptors/n_sift.h5', 'r')
-        D = np.array(n_sift_descriptor['D'])
-        L = np.array(n_sift_descriptor['L'])
-        n_sift_descriptor.close()
-    return D, L
+        print 'Loading DenseSift features...'
+        init=time.time()
+        Train_descriptors_array = np.load('./src/descriptors/DenseSift.npy')
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
+    return Train_descriptors_array
 
+def descriptors_List2Array(descriptors):
 
-def SURF_features(SURFdetector, train_images_filenames, train_labels):
-
-    if not os.path.exists('./src/descriptors/surf.h5'):
-        # read the just 30 train images per class
-        # extract SIFT keypoints and descriptors
-        # store descriptors in a python list of numpy arrays
-        Train_descriptors = []
-        Train_label_per_descriptor = []
-
-        for i in range(len(train_images_filenames)):
-            filename = train_images_filenames[i]
-            if Train_label_per_descriptor.count(train_labels[i]) < 30:
-                print 'Reading image ' + filename
-                ima = cv2.imread(filename)
-                gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
-                kpt, des = SURFdetector[0].detectAndCompute(gray, None)
-                Train_descriptors.append(des)
-                Train_label_per_descriptor.append(train_labels[i])
-                print str(len(kpt)) + ' extracted keypoints and descriptors'
-
-        # Transform everything to numpy arrays
-
-        D = Train_descriptors[0]
-        L = np.array([Train_label_per_descriptor[0]] * Train_descriptors[0].shape[0])
-
-        for i in range(1, len(Train_descriptors)):
-            D = np.vstack((D, Train_descriptors[i]))
-            L = np.hstack((L, np.array([Train_label_per_descriptor[i]] * Train_descriptors[i].shape[0])))
-        f = h5py.File('./src/descriptors/surf.h5', 'w')
-        f.create_dataset('D', data=D)
-        f.create_dataset('L', data=L)
-        f.close()
-    else:
-        sift_descriptor = h5py.File('./src/descriptors/surf.h5', 'r')
-        D = np.array(sift_descriptor['D'])
-        L = np.array(sift_descriptor['L'])
-        sift_descriptor.close()
-    return D, L
+    size_descriptors=descriptors[0].shape[1]
+    D=np.zeros((np.sum([len(p) for p in descriptors]),size_descriptors),dtype=np.uint8)
+    startingpoint=0
+    for i in range(len(descriptors)):
+        D[startingpoint:startingpoint+len(descriptors[i])]=descriptors[i]
+        startingpoint+=len(descriptors[i])
+return D
