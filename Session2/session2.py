@@ -23,6 +23,7 @@ n_features=300 #num. of key points detected with SIFT
 k=512 #num. of words
 C=1 #Penalty parameter C of the error term in svm algorithm
 gamma=0.002 #kernel coefficient for 'rbf', 'poly', and 'sigmoid' in svm algorithm.
+spatial_pyramid = True
 
 #Constants:
 experiment_name = extractor + '_' + classifier + '_k' + str(k)+ '_C' + str(C) + '_gamma' + str(gamma)
@@ -42,7 +43,7 @@ print 'Loaded '+str(len(test_images_filenames))+' testing images filenames with 
 if extractor=='SIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
-    Train_descriptors_array = SIFT_features(myextractor, train_images_filenames)
+    Train_descriptors_array = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
 elif extractor=='DenseSIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))

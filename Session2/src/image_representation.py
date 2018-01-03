@@ -62,3 +62,39 @@ def test_BoW_representation(test_images_filenames, k, myextractor, codebook, ext
     end=time.time()
     print 'Done in '+str(end-init)+' secs.'
     return visual_words_test
+
+def extract_pyramid_bins(levels, kpt, des, dimensions):
+
+    keypoints, descriptors = [], []
+    if levels == []:
+        return keypoints, descriptors
+    x_divisions, y_divisions = levels[0]
+    min_limit_x, min_limit_y = dimensions[0], dimensions[1]
+    max_limit_x, max_limit_y = dimensions[2], dimensions[3]
+
+    x_step = (max_limit_x-min_limit_x) / float(x_divisions)
+    y_step = (max_limit_y-min_limit_y) / float(y_divisions)
+
+    for x_div in range(x_divisions):
+        for y_div in range(y_divisions):
+
+            bin_kpt = []
+            bin_des = []
+
+            min_x,max_x = min_limit_x + x_step*x_div, min_limit_x + x_step*(x_div+1)
+            min_y,max_y = min_limit_y + y_step*y_div, min_limit_y + y_step*(y_div+1)
+
+            for i, kp in enumerate(kpt):
+                if (kp.pt[0] >= min_x and kp.pt[0] < max_x) and (kp.pt[1] >= min_y and kp.pt[1] < max_y):
+                    bin_kpt.append(kpt[i])
+                    bin_des.append(des[i])
+
+            keypoints.append(bin_kpt)
+            descriptors.append(bin_des)
+
+            level_dimensions = [min_x, min_y, max_x, max_y]
+            lower_kps, lower_des = extract_pyramid_bins(levels[1:], bin_kpt, bin_des, level_dimensions)
+
+            keypoints += lower_kps
+            descriptors += lower_des
+    return keypoints, descriptors

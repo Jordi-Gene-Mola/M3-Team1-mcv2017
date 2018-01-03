@@ -3,8 +3,9 @@ import numpy as np
 import h5py
 import os
 import time
+from src.image_representation import extract_pyramid_bins
 
-def SIFT_features(SIFTdetector, train_images_filenames):
+def SIFT_features(SIFTdetector, train_images_filenames, spatial_pyramid=True):
     if not os.path.exists('./src/descriptors/sift.npy'):
         print 'Computing SIFT features...'
         init=time.time()
@@ -16,7 +17,14 @@ def SIFT_features(SIFTdetector, train_images_filenames):
             ima = cv2.imread(filename)
             gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
             kpt, des = SIFTdetector.detectAndCompute(gray, None)
-            Train_descriptors.append(des)
+            kpts = [kpt]
+            descriptors = [des]
+            if spatial_pyramid:
+                levels = [[1, 1], [2, 2], [4, 4]]
+                pyramid_kps, pyramid_des = extract_pyramid_bins(levels, kpt, des, [0, 0, gray.shape[0], gray.shape[1]])
+                descriptors += pyramid_des
+            Train_descriptors.append(descriptors)
+
 
         Train_descriptors_array = np.asarray(Train_descriptors)
 
@@ -72,4 +80,4 @@ def descriptors_List2Array(descriptors):
     for i in range(len(descriptors)):
         D[startingpoint:startingpoint+len(descriptors[i])]=descriptors[i]
         startingpoint+=len(descriptors[i])
-return D
+    return D
