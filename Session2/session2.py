@@ -43,7 +43,7 @@ print 'Loaded '+str(len(test_images_filenames))+' testing images filenames with 
 if extractor=='SIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
-    Train_descriptors_array = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
+    Train_descriptors_array, labels_matrix, ids_matrix, keypoints_matrix = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
 elif extractor=='DenseSIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
@@ -51,10 +51,11 @@ elif extractor=='DenseSIFT':
 else:
     print 'extractor not correct!'
 Train_descriptors=list(Train_descriptors_array)
-D=descriptors_List2Array(Train_descriptors)
+#D=descriptors_List2Array(Train_descriptors)
+D = Train_descriptors_array.astype(np.uint32)
 
 #Getting BoVW with kMeans(Hard Assignment)
-words, visual_words, codebook = BoW_hardAssignment(k, D, Train_descriptors)
+words, visual_words, codebook = BoW_hardAssignment(k, D, ids_matrix)
 
 # Train an SVM classifier.
 clf, stdSlr=train_svm(visual_words, train_labels, experiment_filename, kernel_svm, C, gamma)

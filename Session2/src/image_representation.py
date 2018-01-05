@@ -1,29 +1,33 @@
 import cv2
+import math
 import numpy as np
 import time
 from sklearn import cluster
 
 
-def BoW_hardAssignment(k, D, Train_descriptors):
-    #compute the codebook
-    print 'Computing kmeans with '+str(k)+' centroids'
-    init=time.time()
-    codebook = cluster.MiniBatchKMeans(n_clusters=k, verbose=False, batch_size=k * 20,compute_labels=False,reassignment_ratio=10**-4,random_state=42)
+def BoW_hardAssignment(k, D, ids, spatial_pyramid=True):
+    # compute the codebook
+    print 'Computing kmeans with ' + str(k) + ' centroids'
+    init = time.time()
+    codebook = cluster.MiniBatchKMeans(n_clusters=k, verbose=False, batch_size=k * 20, compute_labels=False,
+                                       reassignment_ratio=10 ** -4, random_state=42)
     codebook.fit(D)
-    end=time.time()
-    print 'Done in '+str(end-init)+' secs.'
+    end = time.time()
+    print 'Done in ' + str(end - init) + ' secs.'
 
     # get train visual word encoding
     print 'Getting Train BoVW representation'
-    init=time.time()
-    visual_words=np.zeros((len(Train_descriptors),k),dtype=np.float32)
-    for i in xrange(len(Train_descriptors)):
-        words=codebook.predict(Train_descriptors[i])
-        visual_words[i,:]=np.bincount(words,minlength=k)
-    end=time.time()
-    print 'Done in '+str(end-init)+' secs.'
-
+    init = time.time()
+    words = codebook.predict(D)
+    if spatial_pyramid:
+        visual_words = build_pyramid(words, ids, k)
+    else:
+        visual_words = np.array([np.bincount(words[ids == i], minlength=k) for i in
+                            range(0, ids.max() + 1)], dtype=np.float64)
+    end = time.time()
+    print 'Done in ' + str(end - init) + ' secs.'
     return words, visual_words, codebook
+
 
 def test_BoW_representation(test_images_filenames, k, myextractor, codebook, extractor):
 
@@ -63,38 +67,37 @@ def test_BoW_representation(test_images_filenames, k, myextractor, codebook, ext
     print 'Done in '+str(end-init)+' secs.'
     return visual_words_test
 
-def extract_pyramid_bins(levels, kpt, des, dimensions):
+def build_pyramid(prediction, descriptors_indices, k=512):
+    levels = [[1, 1], [2, 2], [4, 4]]
+    keypoints_shape = map(int, [math.ceil(float(256) / float(6)),
+                       math.ceil(float(256) / float(6))])
+    kp_i = keypoints_shape[0]
+    kp_j = keypoints_shape[1]
 
-    keypoints, descriptors = [], []
-    if levels == []:
-        return keypoints, descriptors
-    x_divisions, y_divisions = levels[0]
-    min_limit_x, min_limit_y = dimensions[0], dimensions[1]
-    max_limit_x, max_limit_y = dimensions[2], dimensions[3]
+    v_words = []
 
-    x_step = (max_limit_x-min_limit_x) / float(x_divisions)
-    y_step = (max_limit_y-min_limit_y) / float(y_divisions)
+    # Build representation for each image
+    for i in range(0, descriptors_indices.max() + 1):
 
-    for x_div in range(x_divisions):
-        for y_div in range(y_divisions):
+        image_predictions = prediction[descriptors_indices == i]
+        #print image_predictions.shape
+        #print keypoints_shape
+        image_predictions_grid = np.resize(image_predictions, keypoints_shape)
 
-            bin_kpt = []
-            bin_des = []
+        im_representation = []
 
-            min_x,max_x = min_limit_x + x_step*x_div, min_limit_x + x_step*(x_div+1)
-            min_y,max_y = min_limit_y + y_step*y_div, min_limit_y + y_step*(y_div+1)
+        for level in range(0, len(levels)):
+            num_rows = levels[level][0]
+            num_cols = levels[level][1]
+            step_i = int(math.ceil(float(kp_i) / float(num_rows)))
+            step_j = int(math.ceil(float(kp_j) / float(num_cols)))
 
-            for i, kp in enumerate(kpt):
-                if (kp.pt[0] >= min_x and kp.pt[0] < max_x) and (kp.pt[1] >= min_y and kp.pt[1] < max_y):
-                    bin_kpt.append(kpt[i])
-                    bin_des.append(des[i])
+            for i in range(0, kp_i, step_i):
+                for j in range(0, kp_j, step_j):
+                    hist = np.array(np.bincount(image_predictions_grid[i:i + step_i, j:j + step_j].reshape(-1),
+                                                minlength=k))
+                    im_representation = np.hstack((im_representation, hist))
 
-            keypoints.append(bin_kpt)
-            descriptors.append(bin_des)
+        v_words.append(im_representation)
 
-            level_dimensions = [min_x, min_y, max_x, max_y]
-            lower_kps, lower_des = extract_pyramid_bins(levels[1:], bin_kpt, bin_des, level_dimensions)
-
-            keypoints += lower_kps
-            descriptors += lower_des
-    return keypoints, descriptors
+    return np.array(v_words, dtype=np.float64)
