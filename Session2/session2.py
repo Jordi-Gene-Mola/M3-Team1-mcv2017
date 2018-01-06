@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn import cluster
 from src.feature_extractors import SIFT_features,  DenseSIFT_features, descriptors_List2Array
-from src.image_representation import BoW_hardAssignment, test_BoW_representation
+from src.image_representation import BoW_hardAssignment, test_BoW_representation, spatial_pyramid_matching
 from src.train import train_svm
 from src.evaluation import plot_confusion_matrix, rcurve
 
@@ -18,7 +18,7 @@ start = time.time()
 #Variables:
 extractor = 'SIFT' # SIFT or DenseSIFT
 classifier = 'svm' # knn, rf, gnb, svm or lr
-kernel_svm='rbf' #Kernel used in svm
+kernel_svm='rbf' #Kernel used in svm ('rbf' or 'precomputed')
 n_features=300 #num. of key points detected with SIFT
 k=512 #num. of words
 C=1 #Penalty parameter C of the error term in svm algorithm
@@ -43,7 +43,7 @@ print 'Loaded '+str(len(test_images_filenames))+' testing images filenames with 
 if extractor=='SIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
-    Train_descriptors_array, labels_matrix, ids_matrix, keypoints_matrix = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
+    Train_descriptors_array, labels_matrix, ids_matrix = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
 elif extractor=='DenseSIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
@@ -57,6 +57,10 @@ D = Train_descriptors_array.astype(np.uint32)
 #Getting BoVW with kMeans(Hard Assignment)
 words, visual_words, codebook = BoW_hardAssignment(k, D, ids_matrix)
 
+if spatial_pyramid:
+    print 'Creating Spatial Pyramid...'
+    visual_words = [spatial_pyramid_matching(D[i], words, 1, ids_matrix, k) for i in xrange(len(D))]
+    print 'Done!'
 # Train an SVM classifier.
 clf, stdSlr=train_svm(visual_words, train_labels, experiment_filename, kernel_svm, C, gamma)
 

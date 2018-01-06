@@ -8,6 +8,7 @@ from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
+from src.kernels import hist_intersection_kernel
 
 
 
@@ -53,7 +54,9 @@ def train_svm(descriptors, labels, experiment_filename, kernel_svm, C_param, gam
     init=time.time()
     stdSlr = StandardScaler().fit(descriptors)
     D_scaled = stdSlr.transform(descriptors)
-    mysvm = svm.SVC(kernel=kernel_svm, C=C_param, gamma=gamma_param, probability=True).fit(D_scaled, labels)
+    if kernel_svm == 'precomputed':
+        kernel_svm = hist_intersection_kernel
+    mysvm = svm.SVC(kernel=kernel_svm, C=C_param, gamma=gamma_param).fit(D_scaled, labels)
     if save_model:
         print 'Saving SVM with RBG kernel model...'
         cPickle.dump(mysvm, open('./models/' + experiment_filename, 'w'))

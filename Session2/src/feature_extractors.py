@@ -6,17 +6,15 @@ import time
 
 def SIFT_features(SIFTdetector, train_images_filenames, train_labels):
     if not os.path.exists('./src/descriptors/sift_des.npy'):
-        print
-        'Computing SIFT features...'
-        init = time.time()
+        print 'Computing SIFT features...'
+        init=time.time()
         Train_descriptors = []
         labels_des = []
         id_des = []
         keypoints = []
         for i in range(len(train_images_filenames)):
             filename = train_images_filenames[i]
-            print
-            'Reading image ' + filename
+            print 'Reading image ' + filename
             ima = cv2.imread(filename)
             gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
             kpt, des = SIFTdetector.detectAndCompute(gray, None)
@@ -34,26 +32,21 @@ def SIFT_features(SIFTdetector, train_images_filenames, train_labels):
             keypoints_matrix = np.hstack((keypoints_matrix, keypoints[i]))
             labels_matrix = np.hstack((labels_matrix, np.array([labels_des[i]] * Train_descriptors[i].shape[0])))
             ids_matrix = np.hstack((ids_matrix, np.array([id_des[i]] * Train_descriptors[i].shape[0])))
-        """
+
         np.save('./src/descriptors/sift_des', descriptors_matrix)
-        np.save('/.src/descriptors/sift_kp', keypoints_matrix)
-        np.save('/.src/descriptors/sift_ids', ids_matrix)
-        np.save('/.src/descriptors/sift_labels', labels_matrix)"""
-        end = time.time()
-        print
-        'Done in ' + str(end - init) + ' secs.'
+        np.save('./src/descriptors/sift_ids', ids_matrix)
+        np.save('./src/descriptors/sift_labels', labels_matrix)
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
     else:
-        print
-        'Loading SIFT features...'
-        init = time.time()
+        print 'Loading SIFT features...'
+        init=time.time()
         descriptors_matrix = np.load('./src/descriptors/sift_des.npy')
-        keypoints_matrix = np.load('./src/descriptors/sift_kp.npy')
         ids_matrix = np.load('./src/descriptors/sift_ids.npy')
         labels_matrix = np.load('./src/descriptors/sift_labels.npy')
-        end = time.time()
-        print
-        'Done in ' + str(end - init) + ' secs.'
-    return descriptors_matrix, labels_matrix, ids_matrix, keypoints_matrix
+        end=time.time()
+        print 'Done in '+str(end-init)+' secs.'
+    return descriptors_matrix, labels_matrix, ids_matrix
 
 def DenseSIFT_features(SIFTdetector, train_images_filenames):
 
