@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn import cluster
 from src.feature_extractors import SIFT_features,  DenseSIFT_features, descriptors_List2Array
-from src.image_representation import BoW_hardAssignment, test_BoW_representation, spatial_pyramid_matching
+from src.image_representation import BoW_hardAssignment, test_BoW_representation, spatial_pyramid_matching, fisher_vectors
 from src.train import train_svm
 from src.evaluation import plot_confusion_matrix, rcurve
 
@@ -23,7 +23,8 @@ n_features=300 #num. of key points detected with SIFT
 k=512 #num. of words
 C=1 #Penalty parameter C of the error term in svm algorithm
 gamma=0.002 #kernel coefficient for 'rbf', 'poly', and 'sigmoid' in svm algorithm.
-spatial_pyramid = True
+spatial_pyramid = False
+fisher = True
 
 #Constants:
 experiment_name = extractor + '_' + classifier + '_k' + str(k)+ '_C' + str(C) + '_gamma' + str(gamma)
@@ -54,19 +55,27 @@ Train_descriptors=list(Train_descriptors_array)
 #D=descriptors_List2Array(Train_descriptors)
 D = Train_descriptors_array.astype(np.uint32)
 
-#Getting BoVW with kMeans(Hard Assignment)
-words, visual_words, codebook = BoW_hardAssignment(k, D, ids_matrix)
+if not fisher:
+    #Getting BoVW with kMeans(Hard Assignment)
+    words, visual_words, codebook = BoW_hardAssignment(k, D, ids_matrix)
 
-if spatial_pyramid:
-    print 'Creating Spatial Pyramid...'
-    visual_words = [spatial_pyramid_matching(D[i], words, 1, ids_matrix, k) for i in xrange(len(D))]
+    if spatial_pyramid:
+        print 'Creating Spatial Pyramid...'
+        visual_words = [spatial_pyramid_matching(D[i], words, 1) for i in xrange(len(D))]
+        print 'Done!'
+else:
+    print 'Computing train fisher vectors'
+    visual_words = fisher_vectors(D, ids_matrix, k)
     print 'Done!'
 # Train an SVM classifier.
 clf, stdSlr=train_svm(visual_words, train_labels, experiment_filename, kernel_svm, C, gamma)
 
 
-# get all the test data 
-visual_words_test=test_BoW_representation(test_images_filenames, k, myextractor, codebook, extractor)
+if not fisher:
+    visual_words_test=test_BoW_representation(test_images_filenames, k, myextractor, codebook)
+else:
+    visual_words_test = fisher_vectors(None, None, k, test_images_filenames, myextractor)
+print 'Done!'
 
 # Test the classification accuracy
 print 'Testing the SVM classifier...'

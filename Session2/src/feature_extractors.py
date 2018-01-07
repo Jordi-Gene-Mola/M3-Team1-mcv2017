@@ -4,6 +4,7 @@ import h5py
 import os
 import time
 
+
 def SIFT_features(SIFTdetector, train_images_filenames, train_labels):
     if not os.path.exists('./src/descriptors/sift_des.npy'):
         print 'Computing SIFT features...'

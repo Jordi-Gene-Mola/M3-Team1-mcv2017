@@ -7,6 +7,8 @@ import os
 import math
 import scipy.cluster.vq as vq
 from sklearn import cluster
+from yael.yael import ynumpy
+
 
 def BoW_hardAssignment(k, D, ids, spatial_pyramid=False, save_model=True):
     if not os.path.exists('./models/' + 'codebook.p'):
@@ -89,15 +91,11 @@ def test_BoW_representation(test_images_filenames, k, myextractor, codebook, ext
 
 def build_spatial_pyramid(descriptor, level):
 
-    DSIFT_STEP_SIZE = 4
     assert 0 <= level <= 2, "Level Error"
-    step_size = DSIFT_STEP_SIZE
-    #h=20
-    #w=15
+    step_size = 4
     h = 256 / step_size
     w = 256 / step_size
     idx_crop = np.resize(np.array(range(len(descriptor))), [h, w])
-    #idx_crop = np.array(range(len(descriptor)))
     size = idx_crop.itemsize
     height, width = idx_crop.shape
     bh, bw = 2**(3-level), 2**(3-level)
@@ -112,37 +110,75 @@ def build_spatial_pyramid(descriptor, level):
         pyramid.append(np.asarray([descriptor[idx] for idx in idxs]))
     return pyramid
 
-def spatial_pyramid_matching(descriptor, codebook, level, ids, k):
+def spatial_pyramid_matching(descriptor, codebook, level):
     pyramid = []
     if level == 0:
         pyramid += build_spatial_pyramid(descriptor, 0)
-        code = [input_vector_encoder(crop, codebook, ids, k) for crop in pyramid]
-        return np.asarray(code).flatten()
+        words = [obtain_word_hist(crop, codebook) for crop in pyramid]
+        return np.asarray(words).flatten()
     if level == 1:
         pyramid += build_spatial_pyramid(descriptor, 0)
         pyramid += build_spatial_pyramid(descriptor, 1)
-        code = [input_vector_encoder(crop, codebook, ids, k) for crop in pyramid]
-        code_level_0 = 0.5 * np.asarray(code[0]).flatten()
-        code_level_1 = 0.5 * np.asarray(code[1:]).flatten()
-        return np.concatenate((code_level_0, code_level_1))
+        words = [obtain_word_hist(crop, codebook) for crop in pyramid]
+        words_level_0 = 0.5 * np.asarray(words[0]).flatten()
+        words_level_1 = 0.5 * np.asarray(words[1:]).flatten()
+        return np.concatenate((words_level_0, words_level_1))
     if level == 2:
         pyramid += build_spatial_pyramid(descriptor, 0)
         pyramid += build_spatial_pyramid(descriptor, 1)
         pyramid += build_spatial_pyramid(descriptor, 2)
-        code = [input_vector_encoder(crop, codebook, ids, k) for crop in pyramid]
-        code_level_0 = 0.25 * np.asarray(code[0]).flatten()
-        code_level_1 = 0.25 * np.asarray(code[1:5]).flatten()
-        code_level_2 = 0.5 * np.asarray(code[5:]).flatten()
-        return np.concatenate((code_level_0, code_level_1, code_level_2))
+        words = [obtain_word_hist(crop, codebook) for crop in pyramid]
+        words_level_0 = 0.25 * np.asarray(words[0]).flatten()
+        words_level_1 = 0.25 * np.asarray(words[1:5]).flatten()
+        words_level_2 = 0.5 * np.asarray(words[5:]).flatten()
+        return np.concatenate((words_level_0, words_level_1, words_level_2))
 
-def input_vector_encoder(feature, codebook, ids, k):
-
-   """ #words = codebook.predict([feature])
-    print ids.max()
-   #print words.shape
-    word_hist = np.array([np.bincount(feature[ids == i], minlength=k) for i in
-                            range(0, ids.max()+1)], dtype=np.float64)
-    return word_hist"""
-   code, _ = vq.vq(feature, codebook)
-   word_hist, bin_edges = np.histogram(code, bins=range(codebook.shape[0] + 1), normed=True)
+def obtain_word_hist(feature, codebook):
+   words, _ = vq.vq(feature, codebook)
+   word_hist, bin_edges = np.histogram(codebook, bins=range(codebook.shape[0] + 1), normed=True)
    return word_hist
+
+def fisher_vectors(descriptors, idxs, k, image_filenames=None, myextractor=None):
+    if descriptors is None:
+        descriptors = []
+        id_des = []
+        for i in range(len(image_filenames)):
+            filename = image_filenames[i]
+            #print 'Reading image ' + filename
+            ima = cv2.imread(filename)
+            gray = cv2.cvtColor(ima, cv2.COLOR_BGR2GRAY)
+            kpt, des = myextractor.detectAndCompute(gray, None)
+            descriptors.append(des)
+            id_des.append(i)
+
+        # Transform the descriptors and the labels to numpy arrays
+        descriptors_matrix = descriptors[0]
+        ids_matrix = np.array([id_des[0]] * descriptors[0].shape[0])
+        for i in range(1, len(descriptors)):
+            descriptors_matrix = np.vstack((descriptors_matrix, descriptors[i]))
+            ids_matrix = np.hstack((ids_matrix, np.array([id_des[i]] * descriptors[i].shape[0])))
+        descriptors = descriptors_matrix
+        idxs = ids_matrix
+
+    """pca = PCA(n_components=20)
+    pca.fit(descriptors)
+    descriptors_matrix = pca.transform(descriptors)
+    descriptors = np.float32(descriptors_matrix)"""
+
+    # train GMM
+    gmm = ynumpy.gmm_learn(np.float32(descriptors), k)
+    image_fvs = np.array([ynumpy.fisher(gmm, descriptors[idxs == i],
+                                        include=['mu', 'sigma']) for i in range(0, idxs.max() + 1)])
+
+    # make one matrix with all FVs
+    image_fvs = np.vstack(image_fvs)
+
+    # normalizations are done on all descriptors at once
+
+    # power-normalization
+    image_fvs = np.sign(image_fvs) * np.abs(image_fvs) ** 0.5
+
+    # L2 normalize
+    norms = np.sqrt(np.sum(image_fvs ** 2, 1))
+    image_fvs /= norms.reshape(-1, 1)
+    return image_fvs
