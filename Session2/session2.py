@@ -44,16 +44,16 @@ print 'Loaded '+str(len(test_images_filenames))+' testing images filenames with 
 if extractor=='SIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
-    Train_descriptors_array, labels_matrix, ids_matrix = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
+    Train_descriptors_array, ids_matrix = SIFT_features(myextractor, train_images_filenames, spatial_pyramid)
 elif extractor=='DenseSIFT':
     #myextractor=(cv2.SIFT(nfeatures=300))
     myextractor=(cv2.xfeatures2d.SIFT_create(nfeatures = n_features))
-    Train_descriptors_array = DenseSIFT_features(myextractor, train_images_filenames)
+    Train_descriptors_array, ids_matrix = DenseSIFT_features(myextractor, train_images_filenames)
 else:
     print 'extractor not correct!'
 Train_descriptors=list(Train_descriptors_array)
-#D=descriptors_List2Array(Train_descriptors)
-D = Train_descriptors_array.astype(np.uint32)
+D=descriptors_List2Array(Train_descriptors)
+#D = Train_descriptors_array.astype(np.uint32)
 
 if not fisher:
     #Getting BoVW with kMeans(Hard Assignment)
@@ -72,7 +72,7 @@ clf, stdSlr=train_svm(visual_words, train_labels, experiment_filename, kernel_sv
 
 
 if not fisher:
-    visual_words_test=test_BoW_representation(test_images_filenames, k, myextractor, codebook)
+    visual_words_test=test_BoW_representation(test_images_filenames, k, myextractor, codebook, extractor)
 else:
     visual_words_test = fisher_vectors(None, None, k, test_images_filenames, myextractor)
 print 'Done!'

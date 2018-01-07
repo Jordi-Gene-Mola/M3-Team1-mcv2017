@@ -9,45 +9,26 @@ import scipy.cluster.vq as vq
 from sklearn import cluster
 from yael.yael import ynumpy
 
+def BoW_hardAssignment(k, D, Train_descriptors):
+    #compute the codebook
+    print 'Computing kmeans with '+str(k)+' centroids'
+    init=time.time()
+    codebook = cluster.MiniBatchKMeans(n_clusters=k, verbose=False, batch_size=k * 20,compute_labels=False,reassignment_ratio=10**-4,random_state=42)
+    codebook.fit(D)
+    end=time.time()
+    print 'Done in '+str(end-init)+' secs.'
 
-def BoW_hardAssignment(k, D, ids, spatial_pyramid=False, save_model=True):
-    if not os.path.exists('./models/' + 'codebook.p'):
-
-        # compute the codebook
-        print 'Computing kmeans with ' + str(k) + ' centroids'
-        init = time.time()
-        codebook = cluster.MiniBatchKMeans(n_clusters=k, verbose=False, batch_size=k * 20, compute_labels=False,
-                                           reassignment_ratio = 10 ** -4, random_state = 42)
-        codebook.fit(D)
-        end = time.time()
-        print 'Done in ' + str(end - init) + ' secs.'
-
-        # get train visual word encoding
-        print 'Getting Train BoVW representation'
-        init = time.time()
-        words = codebook.predict(D)
-        if spatial_pyramid:
-            pass
-            #visual_words = build_pyramid(words, ids, k)
-        else:
-            visual_words = np.array([np.bincount(words[ids == i], minlength=k) for i in
-                                range(0, ids.max() + 1)], dtype=np.float64)
-
-        if save_model:
-            print 'Saving Codebook...'
-            cPickle.dump(codebook, open('./models/' + 'codebook.p', 'w'))
-            print 'Model saved!'
-        end = time.time()
-        print 'Done in ' + str(end - init) + ' secs.'
-    else:
-        with open('./models/' + 'codebook.p', 'r') as f:
-            print 'Loading model from: {}'.format('./models/' + 'codebook.p')
-            codebook = cPickle.load(f)
-            words = codebook.predict(D)
-            visual_words = np.array([np.bincount(words[ids == i], minlength=k) for i in
-                                     range(0, ids.max() + 1)], dtype=np.float64)
-            print 'Model loaded!'
+    # get train visual word encoding
+    print 'Getting Train BoVW representation'
+    init=time.time()
+    visual_words=np.zeros((len(Train_descriptors),k),dtype=np.float32)
+    for i in xrange(len(Train_descriptors)):
+        words=codebook.predict(Train_descriptors[i])
+        visual_words[i,:]=np.bincount(words,minlength=k)
+    end=time.time()
+    print 'Done in '+str(end-init)+' secs.'
     return words, visual_words, codebook
+
 
 
 def test_BoW_representation(test_images_filenames, k, myextractor, codebook, extractor):
