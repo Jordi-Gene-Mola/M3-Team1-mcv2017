@@ -4,12 +4,14 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Reshape
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import plot_model
+from keras.optimizers import Adam
 
 #user defined variables
-IMG_SIZE    = 32
+IMG_SIZE    = 128
 BATCH_SIZE  = 16
 DATASET_DIR = '/imatge/froldan/MIT_split'
-experiment_name = 'mlp_2_hidden_layers'
+optimizer = 'adam'
+experiment_name = 'mlp_2_hidden_layers_'+optimizer
 MODEL_FNAME = './models/' + experiment_name + '.h5'
 WEIGHTS_FNAME = './models/' + experiment_name + '_weights.h5'
 
@@ -26,9 +28,15 @@ model.add(Reshape((IMG_SIZE*IMG_SIZE*3,),input_shape=(IMG_SIZE, IMG_SIZE, 3),nam
 model.add(Dense(units=2048, activation='relu',name='fc1'))
 model.add(Dense(units=1024, activation='relu', name='fc2'))
 model.add(Dense(units=8, activation='softmax'))
-
+if optimizer == 'sgd':
+    opt = 'sgd'
+elif optimizer == 'adam':
+    opt = Adam(lr=1e-4)
+else:
+    colorprint(Color.RED, 'ERROR: Optimizer not supported!\n')
+    quit()
 model.compile(loss='categorical_crossentropy',
-              optimizer='sgd',
+              optimizer=opt,
               metrics=['accuracy'])
 print('Saving baseline model...')
 model_json = model.to_json()
@@ -37,7 +45,7 @@ with open('./models/'+experiment_name+'.json', 'w') as f:
 print('Baseline model saved')
 
 print(model.summary())
-plot_model(model, to_file='modelMLP.png', show_shapes=True, show_layer_names=True)
+plot_model(model, to_file=experiment_name+'.png', show_shapes=True, show_layer_names=True)
 
 colorprint(Color.BLUE, 'Done!\n')
 
@@ -76,7 +84,7 @@ validation_generator = test_datagen.flow_from_directory(
 
 #Callbacks definitions:
 checkpoint = ModelCheckpoint(WEIGHTS_FNAME, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True, mode='auto', period=1)
-early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.01, patience=5, verbose=0, mode='auto')
+early_stopping = EarlyStopping(monitor='val_loss', min_delta=0.01, patience=10, verbose=0, mode='auto')
 tb = TensorBoard(log_dir='./logs/'+experiment_name+'/', histogram_freq=0, batch_size=BATCH_SIZE, write_graph=True, write_grads=False,
             write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
 history = model.fit_generator(
