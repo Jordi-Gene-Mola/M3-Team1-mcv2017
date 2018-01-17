@@ -1,5 +1,5 @@
 from keras.applications.vgg16 import VGG16
-from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
 from keras.optimizers import SGD, Adam
 from keras.preprocessing import image
 from keras.models import Model
@@ -56,6 +56,7 @@ else:
     print 'Not a valid model ID'
     quit()
 
+#optimizer='adadelta'
 #optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0, nesterov=False)
 optimizer = Adam(lr=1e-5)
 
@@ -99,11 +100,13 @@ validation_generator = datagen.flow_from_directory(val_data_dir,
 checkpoint = ModelCheckpoint(WEIGHTS_FNAME, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True, mode='auto', period=1)
 tb = TensorBoard(log_dir='./logs/week4/'+experiment_name+'/', histogram_freq=0, batch_size=batch_size, write_graph=True, write_grads=False,
             write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
 
 history = model.fit_generator(train_generator,
                               steps_per_epoch = 1881 // batch_size,
                               epochs=number_of_epoch,
-                              validation_data=validation_generator)
+                              validation_data=validation_generator,
+                              callbacks=[checkpoint, tb, reduce_lr])
 
 result = model.evaluate_generator(test_generator)
 print result
