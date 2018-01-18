@@ -32,5 +32,5 @@ train_data_dir = '/imatge/froldan/MIT_split/train'
 test_data_dir = '/imatge/froldan/MIT_split/test'
 destination_train_data_dir = '/imatge/froldan/MIT_split_400/train'
 destination_test_data_dir = '/imatge/froldan/MIT_split_400/test'
-#create_reduced_dataset(train_data_dir, destination_train_data_dir)
+create_reduced_dataset(train_data_dir, destination_train_data_dir)
 create_reduced_dataset(test_data_dir, destination_test_data_dir, dataset_size=200)
