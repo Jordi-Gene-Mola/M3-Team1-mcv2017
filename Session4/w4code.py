@@ -18,9 +18,9 @@ img_width = 224
 img_height = 224
 batch_size = 32
 number_of_epoch = 30
-experiment_name = 'model_one_training_all'
+experiment_name = 'model_one_definitive_paramschanged'
 WEIGHTS_FNAME = './models/week4/' + experiment_name + '_weights.h5'
-model_id='baseline' #model to get
+model_id=1 #model to get
 
 
 
@@ -63,9 +63,9 @@ for layer in model.layers:
 
 # preprocessing_function=preprocess_input,
 datagen = ImageDataGenerator(featurewise_center=False,
-                             samplewise_center=False,
+                             samplewise_center=True,
                              featurewise_std_normalization=False,
-                             samplewise_std_normalization=False,
+                             samplewise_std_normalization=True,
                              preprocessing_function=preprocess_input,
                              rotation_range=0.,
                              width_shift_range=0.,
@@ -115,6 +115,11 @@ if model_id > 0:
     print 'Training the whole network...'
     for layer in model.layers:
         layer.trainable = True
+    checkpoint = ModelCheckpoint(weights_full_fname, monitor='val_loss', verbose=0, save_best_only=True,
+                                 save_weights_only=True, mode='auto', period=1)
+    tb = TensorBoard(log_dir='./logs_full/week4/' + experiment_name + '/', histogram_freq=0, batch_size=batch_size,
+                     write_graph=True, write_grads=False,
+                     write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     history = model.fit_generator(train_generator,
                                 steps_per_epoch = 400 // batch_size,
