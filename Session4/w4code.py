@@ -18,7 +18,7 @@ img_width = 224
 img_height = 224
 batch_size = 32
 number_of_epoch = 30
-experiment_name = 'model_one_definitive_paramschanged'
+experiment_name = 'model_one_definitive_adam'
 WEIGHTS_FNAME = './models/week4/' + experiment_name + '_weights.h5'
 model_id=1 #model to get
 
@@ -46,8 +46,8 @@ def preprocess_input(x, dim_ordering='default'):
     return x
 
 #optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0, nesterov=False)
-#optimizer = Adam(lr=1e-4)
-optimizer = 'adadelta'
+optimizer = Adam(lr=1e-5)
+#optimizer = 'adadelta'
 if model_id == 'baseline':
     model = get_baseline_model(experiment_name, optimizer)
 elif model_id == 1:
