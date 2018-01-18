@@ -11,16 +11,16 @@ from keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 from src.models import get_baseline_model, get_model_one, get_model_two
 
-train_data_dir = '/imatge/froldan/MIT_split/train'
-val_data_dir = '/imatge/froldan/MIT_split/test'
-test_data_dir = '/imatge/froldan/MIT_split/test'
+train_data_dir = '/imatge/froldan/MIT_split_400/train'
+val_data_dir = '/imatge/froldan/MIT_split_400/test'
+test_data_dir = '/imatge/froldan/MIT_split_400/test'
 img_width = 224
 img_height = 224
 batch_size = 32
 number_of_epoch = 30
-experiment_name = 'model_one_test'
+experiment_name = 'model_one_training_all'
 WEIGHTS_FNAME = './models/week4/' + experiment_name + '_weights.h5'
-model_id=2 #model to get
+model_id='baseline' #model to get
 
 
 
@@ -45,22 +45,19 @@ def preprocess_input(x, dim_ordering='default'):
         x[:, :, 2] -= 123.68
     return x
 
-
+#optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0, nesterov=False)
+#optimizer = Adam(lr=1e-4)
+optimizer = 'adadelta'
 if model_id == 'baseline':
-    model = get_baseline_model(experiment_name)
+    model = get_baseline_model(experiment_name, optimizer)
 elif model_id == 1:
-    model = get_model_one(experiment_name)
+    model = get_model_one(experiment_name, optimizer)
 elif model_id ==2:
-    model = get_model_two(experiment_name)
+    model = get_model_two(experiment_name, optimizer)
 else:
     print 'Not a valid model ID'
     quit()
 
-#optimizer='adadelta'
-#optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0, nesterov=False)
-optimizer = Adam(lr=1e-5)
-
-model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 for layer in model.layers:
     print layer.name, layer.trainable
 
@@ -103,11 +100,27 @@ tb = TensorBoard(log_dir='./logs/week4/'+experiment_name+'/', histogram_freq=0, 
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
 
 history = model.fit_generator(train_generator,
-                              steps_per_epoch = 1881 // batch_size,
+                              steps_per_epoch = 400 // batch_size,
                               epochs=number_of_epoch,
                               validation_data=validation_generator,
                               callbacks=[checkpoint, tb, reduce_lr])
 
+model.load_weights(WEIGHTS_FNAME)
+
 result = model.evaluate_generator(test_generator)
 print result
 
+if model_id > 0:
+    weights_full_fname = './models/week4/' + experiment_name + '_weights_full_net.h5'
+    print 'Training the whole network...'
+    for layer in model.layers:
+        layer.trainable = True
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    history = model.fit_generator(train_generator,
+                                steps_per_epoch = 1881 // batch_size,
+                                epochs=number_of_epoch,
+                                validation_data=validation_generator,
+                                callbacks=[checkpoint, tb, reduce_lr])
+    model.load_weights(weights_full_fname)
+    result = model.evaluate_generator(test_generator)
+    print result
