@@ -117,7 +117,7 @@ if model_id > 0:
         layer.trainable = True
     model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
     history = model.fit_generator(train_generator,
-                                steps_per_epoch = 1881 // batch_size,
+                                steps_per_epoch = 400 // batch_size,
                                 epochs=number_of_epoch,
                                 validation_data=validation_generator,
                                 callbacks=[checkpoint, tb, reduce_lr])
