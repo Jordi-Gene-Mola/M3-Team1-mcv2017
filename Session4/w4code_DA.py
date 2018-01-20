@@ -12,7 +12,7 @@ from keras import backend as K
 from keras.utils import plot_model
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import matplotlib.pyplot as plt
-from src.models import get_baseline_model, get_model_one, get_model_two
+from src.models import get_baseline_model, get_model_one, get_model_two, get_model_three
 
 train_data_dir = './MIT_split_400/train'
 val_data_dir = './MIT_split_400/test'
@@ -21,9 +21,9 @@ img_width = 224
 img_height = 224
 batch_size = 32
 number_of_epoch = 30
-experiment_name = 'model_one_newdata'
+experiment_name = 'model_three'
 WEIGHTS_FNAME = './models/' + experiment_name + '_weights_full_net.h5'
-model_id=1 #model to get
+model_id=3 #model to get
 
 
 
@@ -57,6 +57,8 @@ elif model_id == 1:
     model = get_model_one(experiment_name, optimizer)
 elif model_id ==2:
     model = get_model_two(experiment_name, optimizer)
+elif model_id == 3:
+    model = get_model_three(experiment_name,optimizer)
 else:
     print 'Not a valid model ID'
     quit()
