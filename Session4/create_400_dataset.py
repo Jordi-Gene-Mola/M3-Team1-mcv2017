@@ -19,7 +19,7 @@ def create_reduced_dataset(source_data_dir, destination_data_dir, dataset_size=5
             except OSError:
                 if not os.path.isdir(full_dst_path):
                     raise
-        full_src_path= os.path.join(train_data_dir, class_dir)
+        full_src_path= os.path.join(source_data_dir, class_dir)
         counter = 0
         for imname in os.listdir(full_src_path):
             copyfile(os.path.join(full_src_path, imname), os.path.join(full_dst_path, imname))
