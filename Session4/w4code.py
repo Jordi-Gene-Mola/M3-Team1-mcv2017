@@ -18,6 +18,7 @@ img_width = 224
 img_height = 224
 batch_size = 32
 number_of_epoch = 30
+
 experiment_name = 'model_one_definitive_adam'
 WEIGHTS_FNAME = './models/week4/' + experiment_name + '_weights.h5'
 model_id=1 #model to get
@@ -46,6 +47,7 @@ def preprocess_input(x, dim_ordering='default'):
     return x
 
 #optimizer=SGD(lr=1e-5, momentum=0.9, decay=0.0, nesterov=False)
+
 optimizer = Adam(lr=1e-5)
 #optimizer = 'adadelta'
 if model_id == 'baseline':
@@ -115,6 +117,7 @@ if model_id > 0:
     print 'Training the whole network...'
     for layer in model.layers:
         layer.trainable = True
+
     checkpoint = ModelCheckpoint(weights_full_fname, monitor='val_loss', verbose=0, save_best_only=True,
                                  save_weights_only=True, mode='auto', period=1)
     tb = TensorBoard(log_dir='./logs_full/week4/' + experiment_name + '/', histogram_freq=0, batch_size=batch_size,
