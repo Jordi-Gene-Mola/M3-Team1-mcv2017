@@ -19,7 +19,7 @@ def create_reduced_dataset(source_data_dir, destination_data_dir, dataset_size=5
             except OSError:
                 if not os.path.isdir(full_dst_path):
                     raise
-        full_src_path= os.path.join(train_data_dir, class_dir)
+        full_src_path= os.path.join(source_data_dir, class_dir)
         counter = 0
         for imname in os.listdir(full_src_path):
             copyfile(os.path.join(full_src_path, imname), os.path.join(full_dst_path, imname))
@@ -32,5 +32,5 @@ train_data_dir = '/imatge/froldan/MIT_split/train'
 test_data_dir = '/imatge/froldan/MIT_split/test'
 destination_train_data_dir = '/imatge/froldan/MIT_split_400/train'
 destination_test_data_dir = '/imatge/froldan/MIT_split_400/test'
-#create_reduced_dataset(train_data_dir, destination_train_data_dir)
-create_reduced_dataset(test_data_dir, destination_test_data_dir, dataset_size=200)
+create_reduced_dataset(train_data_dir, destination_train_data_dir)
+create_reduced_dataset(test_data_dir, destination_test_data_dir, dataset_size=25)
